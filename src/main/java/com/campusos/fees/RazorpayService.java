@@ -54,7 +54,7 @@ public class RazorpayService {
             orderRequest.put("currency", "INR");
             orderRequest.put("receipt", receiptNo);
             var order = client.orders.create(orderRequest);
-            return new Order(order.get("id"), amountInRupees, order.getString("currency"), true);
+            return new Order(order.get("id").toString(), amountInRupees, "INR", true);
         } catch (Exception ex) {
             log.error("Razorpay order creation failed", ex);
             throw ApiException.badRequest("Payment gateway error: " + ex.getMessage());
