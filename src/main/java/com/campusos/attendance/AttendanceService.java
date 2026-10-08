@@ -49,7 +49,9 @@ public class AttendanceService {
             throw ApiException.conflict("Attendance already marked for this class on " + req.classDate());
         }
         // Pre-fetch all students of the batch in one query; validate requested ids against it.
-        List<Student> batchStudents = studentRepository.search(null, null, req.batchId(), null, 0, 500).getContent();
+        List<Student> batchStudents = studentRepository
+                .search(null, null, req.batchId(), null, org.springframework.data.domain.PageRequest.of(0, 500))
+                .getContent();
         Map<Long, Student> byId = new HashMap<>();
         batchStudents.forEach(s -> byId.put(s.getId(), s));
 
@@ -122,7 +124,7 @@ public class AttendanceService {
     public List<ShortageAlert> batchShortage(Long batchId) {
         return recordRepository.statsPerStudentInBatch(batchId).stream()
                 .filter(s -> s.percentage() < MINIMUM_ATTENDANCE_PERCENT)
-                .map(s -> new ShortageAlert(s.studentId(), s.rollNumber(), s.studentName(),
+                .map(s -> new ShortageAlert(s.studentId(), s.rollNumber(), s.name(),
                         null, "OVERALL", s.percentage()))
                 .toList();
     }
@@ -136,7 +138,9 @@ public class AttendanceService {
     /** Roster of students in a batch for the marking screen. */
     @Transactional(readOnly = true)
     public List<RosterEntry> roster(Long batchId) {
-        return studentRepository.search(null, null, batchId, Student.Status.ACTIVE, 0, 500).getContent().stream()
+        return studentRepository
+                .search(null, null, batchId, Student.Status.ACTIVE, org.springframework.data.domain.PageRequest.of(0, 500))
+                .getContent().stream()
                 .map(s -> new RosterEntry(s.getId(), s.getRollNumber(), s.getName()))
                 .toList();
     }
