@@ -19,6 +19,6 @@ public class Batch {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "`year`", nullable = false)
     private int year;
 }

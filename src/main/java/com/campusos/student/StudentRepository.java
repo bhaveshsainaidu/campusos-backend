@@ -19,10 +19,18 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     boolean existsByRollNumberIgnoreCase(String rollNumber);
 
     // Single-join queries with distinct pagination-friendly results; filters hit indexed columns.
-    @Query("""
+    @Query(value = """
         SELECT s FROM Student s
         LEFT JOIN FETCH s.department d
         LEFT JOIN FETCH s.batch b
+        WHERE (:query IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%'))
+              OR LOWER(s.rollNumber) LIKE LOWER(CONCAT('%', :query, '%')))
+          AND (:departmentId IS NULL OR s.department.id = :departmentId)
+          AND (:batchId IS NULL OR s.batch.id = :batchId)
+          AND (:status IS NULL OR s.status = :status)
+        """,
+        countQuery = """
+        SELECT count(s) FROM Student s
         WHERE (:query IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :query, '%'))
               OR LOWER(s.rollNumber) LIKE LOWER(CONCAT('%', :query, '%')))
           AND (:departmentId IS NULL OR s.department.id = :departmentId)
@@ -39,15 +47,22 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     long countByBatchId(Long batchId);
 
-    @Query(value = "SELECT d.code, d.name, COUNT(s.id) FROM students s JOIN departments d ON d.id = s.department_id GROUP BY d.code, d.name", nativeQuery = true)
+    @Query("SELECT d.code, d.name, COUNT(s.id) FROM Student s JOIN s.department d GROUP BY d.code, d.name")
     List<Object[]> perDepartmentCounts();
 
-    @Query(value = "SELECT DATE_FORMAT(admission_date, '%Y-%m') AS month, COUNT(*) FROM students WHERE admission_date >= :since GROUP BY DATE_FORMAT(admission_date, '%Y-%m') ORDER BY month", nativeQuery = true)
+    @Query("""
+        SELECT CONCAT(CAST(YEAR(s.admissionDate) AS string), '-', CASE WHEN MONTH(s.admissionDate) < 10 THEN CONCAT('0', CAST(MONTH(s.admissionDate) AS string)) ELSE CAST(MONTH(s.admissionDate) AS string) END),
+               COUNT(s)
+        FROM Student s
+        WHERE s.admissionDate >= :since
+        GROUP BY YEAR(s.admissionDate), MONTH(s.admissionDate)
+        ORDER BY YEAR(s.admissionDate), MONTH(s.admissionDate)
+        """)
     List<Object[]> admissionTrend(@Param("since") LocalDate since);
 
-    @Query(value = "SELECT COUNT(*) FROM departments", nativeQuery = true)
+    @Query("SELECT COUNT(d) FROM Department d")
     long countDepartments();
 
-    @Query(value = "SELECT COUNT(*) FROM courses", nativeQuery = true)
+    @Query("SELECT COUNT(c) FROM Course c")
     long countCourses();
 }

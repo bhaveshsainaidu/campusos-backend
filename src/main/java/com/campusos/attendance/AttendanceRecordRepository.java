@@ -13,18 +13,18 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
 
     boolean existsBySessionIdAndStudentId(Long sessionId, Long studentId);
 
-    @Query(value = "SELECT COUNT(*) FROM attendance_sessions WHERE assignment_id = :assignmentId", nativeQuery = true)
+    @Query("SELECT COUNT(s) FROM AttendanceSession s WHERE s.assignment.id = :assignmentId")
     long countSessionsForAssignment(@Param("assignmentId") Long assignmentId);
 
-    @Query(value = """
-        SELECT r.class_date,
-               SUM(CASE WHEN r.status IN ('PRESENT','LATE') THEN 1 ELSE 0 END),
-               COUNT(*)
-        FROM attendance_records r
-        WHERE r.class_date >= :since
-        GROUP BY r.class_date
-        ORDER BY r.class_date
-        """, nativeQuery = true)
+    @Query("""
+        SELECT r.classDate,
+               SUM(CASE WHEN r.status IN (com.campusos.attendance.AttendanceRecord.Status.PRESENT, com.campusos.attendance.AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
+               COUNT(r)
+        FROM AttendanceRecord r
+        WHERE r.classDate >= :since
+        GROUP BY r.classDate
+        ORDER BY r.classDate
+        """)
     List<Object[]> dailyTrend(@Param("since") LocalDate since);
 
     /** Per-course attendance percentage for one student (single grouped query, no N+1). */
