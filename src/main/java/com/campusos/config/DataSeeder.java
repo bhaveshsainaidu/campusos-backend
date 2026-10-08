@@ -133,7 +133,7 @@ public class DataSeeder {
 
         // Courses
         List<Course> courses = new ArrayList<>();
-        for (String[] c : COURSES) {
+        for (Object[] c : COURSES) {
             Department dept = depts.stream().filter(d -> d.getCode().equals(c[4])).findFirst().orElseThrow();
             courses.add(courseRepository.save(Course.builder()
                     .code((String) c[0]).title((String) c[1]).credits((Integer) c[2]).semesterNum((Integer) c[3]).department(dept).build()));
