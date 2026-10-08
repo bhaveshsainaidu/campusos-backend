@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.util.List;
 
-interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
+public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
     boolean existsByAssignmentIdAndClassDate(Long assignmentId, LocalDate classDate);
 
     List<AttendanceSession> findByAssignmentIdOrderByClassDateDesc(Long assignmentId);

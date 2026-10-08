@@ -9,11 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-interface FeeStructureRepository extends JpaRepository<FeeStructure, Long> {
-    boolean existsByNameIgnoreCaseAndSemesterId(String name, Long semesterId);
-}
-
-interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
+public interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
 
     List<StudentFee> findByStudentId(Long studentId);
 
@@ -30,13 +26,4 @@ interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
         """)
     List<StudentFee> findDues(@Param("status") StudentFee.FeeStatus status,
                               @Param("departmentId") Long departmentId);
-}
-
-interface PaymentRepository extends JpaRepository<Payment, Long> {
-
-    Optional<Payment> findByRazorpayOrderId(String razorpayOrderId);
-
-    List<Payment> findByStudentFeeId(Long studentFeeId);
-
-    List<Payment> findByStudentIdOrderByCreatedAtDesc(Long studentId);
 }

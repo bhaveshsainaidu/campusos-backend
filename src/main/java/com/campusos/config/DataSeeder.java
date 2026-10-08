@@ -65,7 +65,7 @@ public class DataSeeder {
             {"CE", "Civil Engineering"},
             {"MBA", "Business Administration"},
     };
-    private static final String[][] COURSES = {
+    private static final Object[][] COURSES = {
             {"CS101", "Programming Fundamentals", 4, 1, "CSE"},
             {"CS201", "Data Structures", 4, 3, "CSE"},
             {"CS301", "Database Systems", 4, 5, "CSE"},
@@ -136,7 +136,7 @@ public class DataSeeder {
         for (String[] c : COURSES) {
             Department dept = depts.stream().filter(d -> d.getCode().equals(c[4])).findFirst().orElseThrow();
             courses.add(courseRepository.save(Course.builder()
-                    .code(c[0]).title(c[1]).credits(c[2]).semesterNum(c[3]).department(dept).build()));
+                    .code((String) c[0]).title((String) c[1]).credits((Integer) c[2]).semesterNum((Integer) c[3]).department(dept).build()));
         }
 
         // Assignments + timetable (every course gets a faculty, section A)
