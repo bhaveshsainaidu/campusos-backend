@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -88,20 +89,25 @@ public class FeeService {
         FeeStructure structure = structureRepository.findById(req.feeStructureId())
                 .orElseThrow(() -> ApiException.notFound("Fee structure not found"));
         int assigned = 0, skipped = 0;
+        java.util.Set<Long> existingStudentIds = studentFeeRepository.findStudentIdsByFeeStructureId(structure.getId());
         var students = studentRepository.findAll(org.springframework.data.domain.PageRequest.of(0, 10000)).getContent();
+        List<StudentFee> toSave = new ArrayList<>();
         for (Student student : students) {
             boolean matches = structure.getDepartment() == null
                     || (student.getDepartment() != null
                         && student.getDepartment().getId().equals(structure.getDepartment().getId()));
-            if (!matches) { skipped++; continue; }
-            var existing = studentFeeRepository.findByStudentIdAndFeeStructureId(
-                    student.getId(), structure.getId());
-            if (existing.isPresent()) { skipped++; continue; }
-            studentFeeRepository.save(StudentFee.builder()
+            if (!matches || existingStudentIds.contains(student.getId())) {
+                skipped++;
+                continue;
+            }
+            toSave.add(StudentFee.builder()
                     .student(student).feeStructure(structure)
                     .amount(structure.getTotalAmount()).dueDate(req.dueDate())
                     .status(StudentFee.FeeStatus.PENDING).paidAmount(BigDecimal.ZERO).build());
             assigned++;
+        }
+        if (!toSave.isEmpty()) {
+            studentFeeRepository.saveAll(toSave);
         }
         log.info("Fee structure {} assigned: {} assigned, {} skipped", structure.getId(), assigned, skipped);
         return new AssignResult(assigned, skipped);

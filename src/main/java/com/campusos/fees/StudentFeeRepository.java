@@ -17,6 +17,9 @@ public interface StudentFeeRepository extends JpaRepository<StudentFee, Long> {
 
     Optional<StudentFee> findByStudentIdAndFeeStructureId(Long studentId, Long feeStructureId);
 
+    @Query("SELECT f.student.id FROM StudentFee f WHERE f.feeStructure.id = :feeStructureId")
+    java.util.Set<Long> findStudentIdsByFeeStructureId(@Param("feeStructureId") Long feeStructureId);
+
     @Query("""
         SELECT f FROM StudentFee f
         JOIN FETCH f.student st
