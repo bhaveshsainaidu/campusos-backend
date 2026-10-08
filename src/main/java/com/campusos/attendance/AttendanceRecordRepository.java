@@ -31,7 +31,7 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("""
         SELECT new com.campusos.attendance.CourseAttendanceStat(
             a.course.id, a.course.code, a.course.title,
-            SUM(CASE WHEN r.status IN (AttendanceRecord.Status.PRESENT, AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
+            SUM(CASE WHEN r.status IN (com.campusos.attendance.AttendanceRecord.Status.PRESENT, com.campusos.attendance.AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
             COUNT(r))
         FROM AttendanceRecord r
         JOIN r.session s
@@ -44,7 +44,7 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     /** Overall counts for one student. */
     @Query("""
         SELECT new com.campusos.attendance.OverallAttendanceStat(
-            SUM(CASE WHEN r.status IN (AttendanceRecord.Status.PRESENT, AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
+            SUM(CASE WHEN r.status IN (com.campusos.attendance.AttendanceRecord.Status.PRESENT, com.campusos.attendance.AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
             COUNT(r))
         FROM AttendanceRecord r
         WHERE r.student.id = :studentId
@@ -55,7 +55,7 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     @Query("""
         SELECT new com.campusos.attendance.StudentAttendanceStat(
             st.id, st.rollNumber, st.name,
-            SUM(CASE WHEN r.status IN (AttendanceRecord.Status.PRESENT, AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
+            SUM(CASE WHEN r.status IN (com.campusos.attendance.AttendanceRecord.Status.PRESENT, com.campusos.attendance.AttendanceRecord.Status.LATE) THEN 1 ELSE 0 END),
             COUNT(r))
         FROM AttendanceRecord r
         JOIN r.student st

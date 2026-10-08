@@ -50,7 +50,7 @@ app:
     key-id: ${RAZORPAY_KEY_ID:}
     key-secret: ${RAZORPAY_KEY_SECRET:}
   seed:
-    enabled: ${SEED_ENABLED:false}
+    enabled: ${SEED_ENABLED:true}
   marksheet:
     dir: ${MARKSHEET_DIR:./marksheets}
 

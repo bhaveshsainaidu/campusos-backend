@@ -120,7 +120,7 @@ CREATE TABLE timetable_slots (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   assignment_id BIGINT NOT NULL,
   batch_id BIGINT NOT NULL,
-  day_of_week TINYINT NOT NULL,
+  day_of_week INT NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
   room VARCHAR(50) NOT NULL,
@@ -154,8 +154,9 @@ CREATE TABLE attendance_records (
   PRIMARY KEY (id, class_date),
   KEY idx_att_records_student (student_id, class_date),
   KEY idx_att_records_session (session_id),
-  CONSTRAINT fk_att_records_session FOREIGN KEY (session_id) REFERENCES attendance_sessions(id) ON DELETE CASCADE,
-  CONSTRAINT fk_att_records_student FOREIGN KEY (student_id) REFERENCES students(id)
+  -- No FK constraints: MySQL does not support foreign keys on partitioned tables.
+  -- Referential integrity is enforced in the service layer.
+  INDEX idx_att_records_date_status (class_date, status)
 ) ENGINE=InnoDB
 PARTITION BY RANGE COLUMNS(class_date) (
   PARTITION p2024 VALUES LESS THAN ('2025-01-01'),

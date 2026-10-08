@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Seeds realistic demo data on first run when app.seed.enabled=true.
- * Produces ~10,000 students across 5 departments and 20 batches.
+ * Produces exactly 10,000 students across 5 departments and 15 batches.
  */
 @Configuration
 @RequiredArgsConstructor
@@ -55,7 +55,7 @@ public class DataSeeder {
     private final StudentFeeRepository studentFeeRepository;
     private final NoticeRepository noticeRepository;
 
-    @Value("${app.seed.enabled:false}")
+    @Value("${app.seed.enabled:true}")
     private boolean seedEnabled;
 
     private static final String[][] DEPARTMENTS = {
@@ -88,7 +88,7 @@ public class DataSeeder {
     ApplicationRunner seedRunner() {
         return args -> {
             if (!seedEnabled) return;
-            if (studentRepository.count() > 0) {
+            if (studentRepository.count() > 0 && recordRepository.count() > 0) {
                 log.info("Seed skipped: data already present");
                 return;
             }
@@ -97,17 +97,28 @@ public class DataSeeder {
     }
 
     @Transactional
-    protected void seed() throws Exception {
+    public void seed() throws Exception {
         long start = System.currentTimeMillis();
         Random rnd = ThreadLocalRandom.current();
         log.info("Seeding demo data...");
 
+        // Pre-compute password hashes to avoid BCrypt hashing thousands of times
+        String adminHash = passwordEncoder.encode("Admin@123");
+        String facultyHash = passwordEncoder.encode("Faculty@123");
+        String studentHash = passwordEncoder.encode("Student@123");
+
         // Admin + faculty
-        User admin = saveUser("admin@campusos.edu", "Admin@123", Role.ADMIN, "Dr. Priya Sharma");
+        User admin = userRepository.save(User.builder()
+                .email("admin@campusos.edu").passwordHash(adminHash)
+                .role(Role.ADMIN).fullName("Dr. Priya Sharma").active(true).build());
+
         List<User> faculty = new ArrayList<>();
         for (int i = 1; i <= 12; i++) {
-            faculty.add(saveUser(String.format("faculty%d@campusos.edu", i), "Faculty@123", Role.FACULTY,
-                    "Prof. " + FIRST[rnd.nextInt(FIRST.length)] + " " + LAST[rnd.nextInt(LAST.length)]));
+            faculty.add(userRepository.save(User.builder()
+                    .email(String.format("faculty%d@campusos.edu", i)).passwordHash(facultyHash)
+                    .role(Role.FACULTY)
+                    .fullName("Prof. " + FIRST[rnd.nextInt(FIRST.length)] + " " + LAST[rnd.nextInt(LAST.length)])
+                    .active(true).build()));
         }
 
         // Departments & batches
@@ -116,10 +127,8 @@ public class DataSeeder {
             depts.add(departmentRepository.save(Department.builder().code(d[0]).name(d[1]).build()));
         }
         List<Batch> batches = new ArrayList<>();
-        int batchNo = 0;
         for (Department dept : depts) {
             for (int year = 2023; year <= 2025; year++) {
-                batchNo++;
                 batches.add(batchRepository.save(Batch.builder()
                         .department(dept).name(dept.getCode() + "-" + year).year(year).build()));
             }
@@ -158,34 +167,43 @@ public class DataSeeder {
             }
         }
 
-        // 10,000 students in batches of 1,000 (jdbc-batched inserts)
+        // 10,000 students (5 departments * 3 batches: 650 + 650 + 700 per department = 10,000)
         log.info("Creating 10,000 students...");
-        List<Student> allStudents = new ArrayList<>();
+        List<Student> allStudents = new ArrayList<>(10000);
         int roll = 1;
         for (Batch batch : batches) {
-            int count = "2025".equals(String.valueOf(batch.getYear())) ? 1500 : 1000;
+            int count = (batch.getYear() == 2025) ? 700 : 650;
+            List<User> userBatch = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 String name = FIRST[rnd.nextInt(FIRST.length)] + " " + LAST[rnd.nextInt(LAST.length)];
-                String email = String.format("student%05d@campusos.edu", roll);
-                User u = saveUser(email, "Student@123", Role.STUDENT, name);
-                Student s = Student.builder()
-                        .user(u).rollNumber(String.format("%s%04d", batch.getName().replace("-", ""), roll))
-                        .name(name).email(email).phone("+91-9" + (100000000 + rnd.nextInt(899999999)))
+                String email = String.format("student%05d@campusos.edu", roll + i);
+                userBatch.add(User.builder()
+                        .email(email).passwordHash(studentHash)
+                        .role(Role.STUDENT).fullName(name).active(true).build());
+            }
+            List<User> savedUsers = userRepository.saveAll(userBatch);
+
+            List<Student> studentBatch = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                User u = savedUsers.get(i);
+                int studentRoll = roll + i;
+                studentBatch.add(Student.builder()
+                        .user(u).rollNumber(String.format("%s%04d", batch.getName().replace("-", ""), studentRoll))
+                        .name(u.getFullName()).email(u.getEmail()).phone("+91-9" + (100000000 + rnd.nextInt(899999999)))
                         .gender(rnd.nextBoolean() ? Student.Gender.MALE : Student.Gender.FEMALE)
                         .dob(LocalDate.of(batch.getYear() - 18, 1 + rnd.nextInt(12), 1 + rnd.nextInt(28)))
                         .admissionDate(LocalDate.of(batch.getYear(), 7, 15))
                         .guardianName(FIRST[rnd.nextInt(FIRST.length)] + " " + LAST[rnd.nextInt(LAST.length)])
                         .address("Hostel Block " + (char) ('A' + rnd.nextInt(8)) + ", Campus Road")
                         .status(Student.Status.ACTIVE).department(batch.getDepartment()).batch(batch)
-                        .build();
-                allStudents.add(studentRepository.save(s));
-                roll++;
+                        .build());
             }
+            allStudents.addAll(studentRepository.saveAll(studentBatch));
+            roll += count;
         }
         log.info("Students created: {}", allStudents.size());
 
-        // Attendance: ~30 days history for the 3 CSE/ECE/MBA first batches (keeps seed time sane,
-        // other batches accumulate data during use)
+        // Attendance: ~30 days history for the first batches
         log.info("Creating attendance history...");
         List<Student> sample = allStudents.stream().limit(3000).toList();
         List<Batch> sampleBatches = sample.stream().map(Student::getBatch).distinct().toList();
@@ -214,6 +232,7 @@ public class DataSeeder {
                 recordRepository.saveAll(records);
             }
         }
+        log.info("Attendance records seeded: {}", recordRepository.count());
 
         // Fees
         log.info("Creating fee structures...");
@@ -223,13 +242,16 @@ public class DataSeeder {
                 .componentsJson("[{\"name\":\"Tuition\",\"amount\":50000},{\"name\":\"Library\",\"amount\":5000},{\"name\":\"Lab\",\"amount\":7000},{\"name\":\"Sports\",\"amount\":3000}]")
                 .build());
         int assigned = 0;
+        List<StudentFee> feeBatch = new ArrayList<>(500);
         for (Student s : allStudents) {
-            studentFeeRepository.save(StudentFee.builder()
+            feeBatch.add(StudentFee.builder()
                     .student(s).feeStructure(fs).amount(new BigDecimal("65000"))
                     .dueDate(LocalDate.now().plusDays(20))
                     .status(StudentFee.FeeStatus.PENDING).paidAmount(BigDecimal.ZERO).build());
             if (++assigned >= 500) break; // dues demo data for a subset
         }
+        studentFeeRepository.saveAll(feeBatch);
+        log.info("Student fees seeded: {}", studentFeeRepository.count());
 
         // Notices
         noticeRepository.save(Notice.builder().title("Welcome to CampusOS")
@@ -241,13 +263,8 @@ public class DataSeeder {
         noticeRepository.save(Notice.builder().title("CSE department seminar")
                 .body("Industry seminar on distributed systems this Friday, 3 PM, Auditorium B.")
                 .audience(Notice.Audience.DEPARTMENT).department(depts.get(0)).createdBy(admin).build());
+        log.info("Notices seeded: {}", noticeRepository.count());
 
         log.info("Seed completed in {} ms", System.currentTimeMillis() - start);
-    }
-
-    private User saveUser(String email, String password, Role role, String fullName) {
-        return userRepository.save(User.builder()
-                .email(email).passwordHash(passwordEncoder.encode(password))
-                .role(role).fullName(fullName).active(true).build());
     }
 }

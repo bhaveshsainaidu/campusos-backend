@@ -66,6 +66,7 @@ public class RefreshTokenService {
                 .token(token)
                 .user(user)
                 .expiresAt(Instant.now().plus(ttl))
+                .createdAt(Instant.now())
                 .build());
         return token;
     }
