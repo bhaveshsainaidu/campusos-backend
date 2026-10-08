@@ -51,6 +51,8 @@ app:
     key-secret: ${RAZORPAY_KEY_SECRET:}
   seed:
     enabled: ${SEED_ENABLED:false}
+  marksheet:
+    dir: ${MARKSHEET_DIR:./marksheets}
 
 springdoc:
   api-docs:
