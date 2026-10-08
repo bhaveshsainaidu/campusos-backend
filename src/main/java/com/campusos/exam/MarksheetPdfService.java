@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileOutputStream;
 import java.nio.file.Files;
@@ -49,6 +50,7 @@ public class MarksheetPdfService {
 
     /** Called by ExamService after the job row is created; renders on a virtual thread. */
     @Async
+    @Transactional
     public void renderAsync(String jobId, Long studentId) {
         MarksheetJob job = jobRepository.findById(jobId).orElse(null);
         if (job == null) return;
