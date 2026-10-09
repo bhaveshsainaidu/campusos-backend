@@ -56,10 +56,14 @@ public class DataSeeder {
 
     private static final String[][] DEPARTMENTS = {
             {"CSE", "Computer Science & Engineering"},
-            {"ECE", "Electronics & Communication"},
+            {"IT", "Information Technology"},
+            {"AD", "Artificial Intelligence & Data Science"},
+            {"AIML", "Artificial Intelligence & Machine Learning"},
+            {"ECE", "Electronics & Communication Engineering"},
+            {"EEE", "Electrical & Electronics Engineering"},
             {"ME", "Mechanical Engineering"},
             {"CE", "Civil Engineering"},
-            {"MBA", "Business Administration"},
+            {"MBA", "Master of Business Administration"},
     };
 
     private static final Object[][] COURSES = {
@@ -67,8 +71,16 @@ public class DataSeeder {
             {"CS201", "Data Structures", 4, 3, "CSE"},
             {"CS301", "Database Systems", 4, 5, "CSE"},
             {"CS401", "Distributed Systems", 3, 7, "CSE"},
+            {"IT101", "Web Technologies & Systems", 4, 1, "IT"},
+            {"IT201", "Cloud Computing & Networks", 4, 3, "IT"},
+            {"AD101", "Foundations of AI & Data Science", 4, 1, "AD"},
+            {"AD201", "Machine Learning & Big Data Analytics", 4, 3, "AD"},
+            {"AI101", "Introduction to Artificial Intelligence", 4, 1, "AIML"},
+            {"AI201", "Deep Learning & Neural Networks", 4, 3, "AIML"},
             {"EC101", "Circuit Analysis", 4, 1, "ECE"},
             {"EC201", "Digital Electronics", 4, 3, "ECE"},
+            {"EE101", "Basic Electrical Engineering", 4, 1, "EEE"},
+            {"EE201", "Power Systems & Control", 4, 3, "EEE"},
             {"ME101", "Engineering Mechanics", 4, 1, "ME"},
             {"ME201", "Thermodynamics", 4, 3, "ME"},
             {"CE101", "Surveying", 3, 1, "CE"},
