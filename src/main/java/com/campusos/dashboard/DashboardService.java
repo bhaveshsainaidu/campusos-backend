@@ -45,7 +45,12 @@ public class DashboardService {
 
         List<AdmissionTrendPoint> trend = studentRepository.admissionTrend(LocalDate.now().minusMonths(12))
                 .stream()
-                .map(row -> new AdmissionTrendPoint(String.valueOf(row[0]), ((Number) row[1]).longValue()))
+                .map(row -> {
+                    int y = ((Number) row[0]).intValue();
+                    int m = ((Number) row[1]).intValue();
+                    String ym = String.format("%04d-%02d", y, m);
+                    return new AdmissionTrendPoint(ym, ((Number) row[2]).longValue());
+                })
                 .toList();
 
         List<AttendanceTrendPoint> att = attendanceRecordRepository.dailyTrend(LocalDate.now().minusDays(14))

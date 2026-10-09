@@ -51,8 +51,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Object[]> perDepartmentCounts();
 
     @Query("""
-        SELECT CONCAT(CAST(YEAR(s.admissionDate) AS string), '-', CASE WHEN MONTH(s.admissionDate) < 10 THEN CONCAT('0', CAST(MONTH(s.admissionDate) AS string)) ELSE CAST(MONTH(s.admissionDate) AS string) END),
-               COUNT(s)
+        SELECT YEAR(s.admissionDate), MONTH(s.admissionDate), COUNT(s)
         FROM Student s
         WHERE s.admissionDate >= :since
         GROUP BY YEAR(s.admissionDate), MONTH(s.admissionDate)
