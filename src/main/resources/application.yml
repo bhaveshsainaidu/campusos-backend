@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -8,9 +8,9 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:campusos}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&rewriteBatchedStatements=true
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:campusos}
+    url: ${DB_URL:jdbc:mysql://${MYSQL_HOST:${MYSQLHOST:localhost}}:${MYSQL_PORT:${MYSQLPORT:3306}}/${MYSQL_DB:${MYSQLDATABASE:campusos}}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:${MYSQL_USER:${MYSQLUSER:root}}}
+    password: ${DB_PASSWORD:${MYSQL_PASSWORD:${MYSQLPASSWORD:campusos}}}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 10
